@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+<title>Apex Circuit — 3D Racer</title>
+
+
+  <link rel="manifest" href="manifest.json">
+  <link rel="icon" type="image/png" href="icon.png">
+  <link rel="apple-touch-icon" href="icon.png">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="theme-color" content="#06b6d4">
+  <style>
+  /* 1:1 Canvas & 3D Touch Fidelity */
+  canvas {
+    touch-action: none;
+    -webkit-touch-callout: none;
+  }
+</style>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link rel="stylesheet" href="style.css">
+
+<style>
+  canvas { touch-action: none; -webkit-touch-callout: none; }
+</style>
+</head>
+<body>
+
+  <!-- Loading screen -->
+  <div id="loading-screen">
+    <div class="loader-content">
+      <div class="loader-title">APEX<span>CIRCUIT</span></div>
+      <div class="loader-bar-track"><div class="loader-bar-fill" id="loader-bar-fill"></div></div>
+      <div class="loader-status" id="loader-status">Loading assets…</div>
+    </div>
+  </div>
+
+  <!-- Main menu -->
+  <div id="menu-screen" class="hidden">
+    <div class="menu-panel">
+      <div class="menu-title">APEX<span>CIRCUIT</span></div>
+      <p class="menu-sub">Silverwood Raceway · 3 Laps · 4 Cars</p>
+
+      <div class="menu-option-group">
+        <label class="menu-label">Car Color</label>
+        <div class="color-swatches" id="color-swatches">
+          <button class="swatch" style="--c:#e63946" data-color="#e63946"></button>
+          <button class="swatch" style="--c:#2a9d8f" data-color="#2a9d8f"></button>
+          <button class="swatch" style="--c:#f4a261" data-color="#f4a261"></button>
+          <button class="swatch" style="--c:#457b9d" data-color="#457b9d"></button>
+          <button class="swatch" style="--c:#ffd166" data-color="#ffd166"></button>
+          <button class="swatch" style="--c:#e0e0e0" data-color="#e0e0e0"></button>
+        </div>
+      </div>
+
+      <button id="start-btn" class="primary-btn">Start Race</button>
+
+      <div class="menu-controls-hint">
+        <div class="hint-row"><span class="key">W / ↑</span> Accelerate</div>
+        <div class="hint-row"><span class="key">S / ↓</span> Brake / Reverse</div>
+        <div class="hint-row"><span class="key">A D / ← →</span> Steer</div>
+        <div class="hint-row"><span class="key">Space</span> Handbrake (drift)</div>
+        <div class="hint-row"><span class="key">R</span> Reset onto track</div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Countdown overlay -->
+  <div id="countdown" class="hidden"></div>
+
+  <!-- In-race HUD -->
+  <div id="hud" class="hidden">
+    <div class="hud-top-left">
+      <div class="hud-position" id="hud-position">1<span>st</span></div>
+      <div class="hud-lap" id="hud-lap">LAP 1 / 3</div>
+    </div>
+
+    <div class="hud-top-right">
+      <canvas id="minimap" width="180" height="180"></canvas>
+    </div>
+
+    <div class="hud-timers">
+      <div class="timer-row"><span class="timer-label">TIME</span><span id="hud-time">00:00.00</span></div>
+      <div class="timer-row"><span class="timer-label">BEST LAP</span><span id="hud-best">--:--.--</span></div>
+    </div>
+
+    <div class="hud-bottom-right">
+      <div class="speedo">
+        <svg viewBox="0 0 200 120" class="speedo-svg">
+          <path d="M 20 100 A 80 80 0 0 1 180 100" class="speedo-track"/>
+          <path d="M 20 100 A 80 80 0 0 1 180 100" class="speedo-fill" id="speedo-fill"/>
+        </svg>
+        <div class="speedo-value"><span id="speed-value">0</span><small>km/h</small></div>
+        <div class="gear-indicator" id="gear-indicator">D</div>
+      </div>
+    </div>
+
+    <button id="mute-btn" class="icon-btn" title="Toggle sound">🔊</button>
+  </div>
+
+  <!-- Touch controls (mobile) -->
+  <div id="touch-controls" class="hidden">
+    <div class="touch-steer">
+      <button id="touch-left" class="touch-btn">◀</button>
+      <button id="touch-right" class="touch-btn">▶</button>
+    </div>
+    <div class="touch-pedals">
+      <button id="touch-brake" class="touch-btn touch-brake">▼</button>
+      <button id="touch-drift" class="touch-btn touch-drift">✥</button>
+      <button id="touch-gas" class="touch-btn touch-gas">▲</button>
+    </div>
+  </div>
+
+  <!-- Results screen -->
+  <div id="results-screen" class="hidden">
+    <div class="menu-panel">
+      <div class="menu-title results-title" id="results-heading">FINISH!</div>
+      <div class="results-table" id="results-table"></div>
+      <button id="restart-btn" class="primary-btn">Race Again</button>
+    </div>
+  </div>
+
+  <canvas id="game-canvas"></canvas>
+
+  <script async src="https://cdnjs.cloudflare.com/ajax/libs/es-module-shims/1.10.0/es-module-shims.js"></script>
+  <script type="importmap">
+    {
+      "imports": {
+        "three": "https://cdn.jsdelivr.net/npm/three@0.160.0/build/three.module.js"
+      }
+    }
+  </script>
+  
+  <script type="module" src="script.js"></script>
+
+<script id="pwa-apk-installer-engine">
+(function() {
+  if ('serviceWorker' in navigator) {
+    window.addEventListener('load', function() {
+      navigator.serviceWorker.register('./sw.js').catch(function(err) {
+        console.warn('PWA service worker registration note:', err);
+      });
+    });
+  }
+
+  var params = new URLSearchParams(window.location.search);
+  var action = params.get('action');
+  var installParam = params.get('install');
+  var isInstallTriggered = action === 'install' || installParam === 'apk' || installParam === 'true' || params.get('source') === 'apphub';
+
+  var deferredPrompt = null;
+  var hasPrompted = false;
+
+  window.addEventListener('beforeinstallprompt', function(e) {
+    e.preventDefault();
+    deferredPrompt = e;
+    if (isInstallTriggered && !hasPrompted) {
+      renderInstallGate();
+    }
+  });
+
+  window.addEventListener('appinstalled', function() {
+    deferredPrompt = null;
+    var overlay = document.getElementById('pwa-apk-install-modal');
+    if (overlay) {
+      overlay.innerHTML = '<div style="background:#059669;color:#fff;padding:18px 24px;border-radius:20px;text-align:center;box-shadow:0 12px 30px rgba(0,0,0,0.6);font-family:system-ui,-apple-system,sans-serif;"><div style="font-size:32px;margin-bottom:8px;">🎉</div><div style="font-size:17px;font-weight:bold;">APK Installed Successfully!</div><div style="font-size:12px;opacity:0.9;margin-top:4px;">Opening directly from your Android home screen...</div></div>';
+      setTimeout(function() { overlay.remove(); }, 3200);
+    }
+  });
+
+  if (isInstallTriggered) {
+    window.addEventListener('DOMContentLoaded', function() {
+      setTimeout(function() {
+        if (!document.getElementById('pwa-apk-install-modal')) {
+          renderInstallGate();
+        }
+      }, 400);
+    });
+  }
+
+  function renderInstallGate() {
+    if (document.getElementById('pwa-apk-install-modal')) return;
+
+    var ua = navigator.userAgent.toLowerCase();
+    var isAndroid = /android/.test(ua);
+    var isInApp = ua.includes('wv') || ua.includes('fbav') || ua.includes('instagram') || ua.includes('tiktok') || ua.includes('twitter') || ua.includes('threads') || ua.includes('snapchat');
+
+    var overlay = document.createElement('div');
+    overlay.id = 'pwa-apk-install-modal';
+    overlay.style.cssText = 'position:fixed;inset:0;z-index:2147483647;background:rgba(4,7,15,0.88);backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);display:flex;align-items:flex-end;justify-content:center;padding:16px;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;box-sizing:border-box;';
+
+    var appName = "Car race";
+    var iconSrc = './icon.png';
+
+    var content = document.createElement('div');
+    content.style.cssText = 'width:100%;max-width:430px;background:#0d121f;border:1px solid #1e283c;border-radius:24px;padding:22px;box-shadow:0 24px 50px rgba(0,0,0,0.8);box-sizing:border-box;color:#fff;text-align:left;margin-bottom:env(safe-area-inset-bottom, 10px);';
+
+    var inAppNotice = isInApp ? (
+      '<div style="background:#1e1b4b;border:1px solid #4338ca;padding:12px;border-radius:14px;margin-bottom:16px;font-size:12px;color:#c7d2fe;line-height:1.4;">' +
+        '<strong>⚠️ In-App Browser Detected:</strong><br/>' +
+        'To install as an Android APK, tap the <strong>•••</strong> menu at the top-right and choose <strong>"Open in Chrome"</strong>.' +
+      '</div>'
+    ) : '';
+
+    content.innerHTML = 
+      '<div style="width:36px;height:4px;background:#2a354c;border-radius:99px;margin:0 auto 16px auto;"></div>' +
+      '<div style="display:flex;align-items:center;gap:14px;margin-bottom:16px;">' +
+        '<div style="position:relative;width:64px;height:64px;border-radius:18px;overflow:hidden;background:#131a29;border:1.5px solid #06b6d4;box-shadow:0 6px 16px rgba(0,0,0,0.4);flex-shrink:0;">' +
+          '<img src="' + iconSrc + '" alt="' + appName + '" style="width:100%;height:100%;object-fit:cover;" onerror="this.src=\'https://img.icons8.com/fluency/192/source-code.png\'" />' +
+        '</div>' +
+        '<div style="flex:1;min-width:0;">' +
+          '<div style="font-size:17px;font-weight:800;color:#fff;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;">' + appName + '</div>' +
+          '<div style="font-size:12px;color:#10b981;font-weight:600;display:flex;align-items:center;gap:4px;margin-top:2px;">' +
+            '<span>⚡ Verified Android APK (WebAPK)</span>' +
+          '</div>' +
+          '<div style="font-size:11px;color:#94a3b8;margin-top:2px;">Zero Storage Overhead • Instant Install</div>' +
+        '</div>' +
+      '</div>' +
+
+      inAppNotice +
+
+      '<div style="background:#131826;border:1px solid #1f273d;border-radius:14px;padding:12px 14px;margin-bottom:18px;font-size:12px;color:#cbd5e1;line-height:1.5;">' +
+        '📱 <strong>Direct Install:</strong> Installs <strong>' + appName + '</strong> directly onto your device with your custom launcher icon, fullscreen layout, and full offline caching.' +
+      '</div>' +
+
+      '<div style="display:flex;gap:10px;">' +
+        '<button id="pwa-apk-dismiss-btn" style="flex:1;padding:12px;background:#181f30;border:1px solid #29354e;border-radius:14px;color:#94a3b8;font-size:13px;font-weight:600;cursor:pointer;">Play in Browser</button>' +
+        '<button id="pwa-apk-install-btn" style="flex:1.8;padding:12px 16px;background:#06b6d4;border:none;border-radius:14px;color:#fff;font-size:13px;font-weight:800;cursor:pointer;box-shadow:0 4px 16px rgba(6,182,212,0.4);display:flex;align-items:center;justify-content:center;gap:6px;">' +
+          '<span>Install APK</span>' +
+        '</button>' +
+      '</div>';
+
+    overlay.appendChild(content);
+    document.body.appendChild(overlay);
+
+    var dismissBtn = document.getElementById('pwa-apk-dismiss-btn');
+    if (dismissBtn) {
+      dismissBtn.onclick = function() { overlay.remove(); };
+    }
+
+    var installBtn = document.getElementById('pwa-apk-install-btn');
+    if (installBtn) {
+      installBtn.onclick = function() {
+        if (deferredPrompt) {
+          hasPrompted = true;
+          deferredPrompt.prompt();
+          deferredPrompt.userChoice.then(function(choice) {
+            if (choice.outcome === 'accepted') {
+              overlay.remove();
+            }
+            deferredPrompt = null;
+          });
+        } else {
+          var msg = isAndroid 
+            ? 'To install: Tap the 3 dots (⋮) in Chrome and tap "Install app" or "Add to Home Screen".'
+            : 'To install: Tap Share and select "Add to Home Screen".';
+          alert(msg);
+        }
+      };
+    }
+  }
+})();
+</script>
+</body>
+</html>
